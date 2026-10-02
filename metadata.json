@@ -1,0 +1,6 @@
+{
+  "name": "โปรโมชั่นสมาร์ทโฟนและแท็บเล็ตประจำเดือน",
+  "description": "ระบบค้นหาและตรวจสอบโปรโมชั่นสมาร์ทโฟนและแท็บเล็ตประจำเดือน พร้อมรายละเอียดของแถมและส่วนลด เชื่อมต่อระบบสต็อกและออเดอร์ BaNANA 458 (bnn458-stock-order)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
