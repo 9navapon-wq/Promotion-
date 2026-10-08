@@ -10,24 +10,39 @@ import { SheetSyncModal } from './components/SheetSyncModal';
 import { BnnOrderTray } from './components/BnnOrderTray';
 import { PrintPriceTagModal } from './components/PrintPriceTagModal';
 import { BarcodeScannerModal } from './components/BarcodeScannerModal';
+import { ModelDirectoryModal } from './components/ModelDirectoryModal';
+import { ModelPromotionMenu } from './components/ModelPromotionMenu';
 import { defaultPromotions } from './data/defaultData';
 import { parseCsvToPromotions } from './utils/csvParser';
 import { PromotionItem, PromotionFilter, SheetConfig, BnnOrderItem } from './types/promotion';
 import { SearchX, Sparkles, Filter, Layers, Download, RefreshCw, ShoppingCart, Scan, ExternalLink } from 'lucide-react';
 
-const STORAGE_KEY_PROMOTIONS = 'promotions_app_data_v1';
-const STORAGE_KEY_CONFIG = 'promotions_app_config_v1';
+const STORAGE_KEY_PROMOTIONS = 'promotions_app_data_v2';
+const STORAGE_KEY_CONFIG = 'promotions_app_config_v2';
 const STORAGE_KEY_ORDERS = 'bnn458_orders_v1';
 
 export default function App() {
   // 1. Promotions Data State
   const [promotions, setPromotions] = useState<PromotionItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_PROMOTIONS);
+      const saved = localStorage.getItem(STORAGE_KEY_PROMOTIONS) || localStorage.getItem('promotions_app_data_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const sanitized = parsed.map(item => {
+            const defaultMatch = defaultPromotions.find(d => d.productCode === item.productCode || String(d.no) === String(item.no));
+            const validName = (item.productName && !/^\d{8,15}$/.test(String(item.productName).trim()) && item.productName !== item.productCode)
+              ? item.productName
+              : (defaultMatch ? defaultMatch.productName : item.productName);
+
+            return {
+              ...item,
+              productName: validName,
+              modelName: validName, // ชื่อรุ่นยึดจาก Product Name ตรงตามคอลัมน์ Sub.Cat./Product Name / ช่องต้องกรอกสีแดง
+            };
+          });
+          localStorage.setItem(STORAGE_KEY_PROMOTIONS, JSON.stringify(sanitized));
+          return sanitized;
         }
       }
     } catch (e) {
@@ -67,8 +82,8 @@ export default function App() {
     sortBy: 'no'
   });
 
-  // 4. View Mode: Grid (Cards) vs Table (Spreadsheet)
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  // 4. View Mode: Grid (Cards) vs Table (Spreadsheet) vs Models (Promotions by Model)
+  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'models'>('grid');
 
   // 5. Selected Product for Detail Modal
   const [selectedProduct, setSelectedProduct] = useState<PromotionItem | null>(null);
@@ -98,7 +113,10 @@ export default function App() {
   // 9. In-Store Barcode Scanner Modal State
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // 10. In-Store POP Shelf Price Tag Modal State
+  // 10. Model Directory Modal State (แสดงชื่อรุ่น)
+  const [isModelDirectoryOpen, setIsModelDirectoryOpen] = useState(false);
+
+  // 11. In-Store POP Shelf Price Tag Modal State
   const [printItem, setPrintItem] = useState<PromotionItem | null>(null);
 
   // Sync state to localStorage when changed
@@ -253,6 +271,18 @@ export default function App() {
       console.error('Error parsing raw CSV:', e);
       return false;
     }
+  };
+
+  // Import parsed promotions directly
+  const handleImportPromotions = (items: PromotionItem[], appendMode?: boolean, filename?: string): boolean => {
+    if (!items || items.length === 0) return false;
+    setPromotions(prev => appendMode ? [...prev, ...items] : items);
+    setSheetConfig({
+      sourceType: 'custom-csv',
+      lastUpdated: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      totalRecords: appendMode ? promotions.length + items.length : items.length
+    });
+    return true;
   };
 
   // Reset to default promotions
@@ -416,46 +446,64 @@ export default function App() {
         orderCount={orderItems.reduce((sum, o) => sum + o.quantity, 0)}
         onOpenOrderTray={() => setIsOrderTrayOpen(true)}
         onOpenScanner={() => setIsScannerOpen(true)}
-      />
-
-      {/* 2. Hero Section with Key Metrics & Highlights */}
-      <HeroStats
-        items={promotions}
-        filteredCount={filteredPromotions.length}
-        onQuickFilter={(qf) => handleFilterChange({ quickFilter: qf })}
-        activeQuickFilter={filter.quickFilter}
-      />
-
-      {/* 3. Sticky Filter & Search Bar */}
-      <FilterBar
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        brands={brandList}
+        onOpenModelDirectory={() => setIsModelDirectoryOpen(true)}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        onResetFilter={handleResetFilter}
       />
 
+      {/* 2. Hero Section with Key Metrics & Highlights (Hidden in Model Hub for sleek mobile experience) */}
+      {viewMode !== 'models' && (
+        <HeroStats
+          items={promotions}
+          filteredCount={filteredPromotions.length}
+          onQuickFilter={(qf) => handleFilterChange({ quickFilter: qf })}
+          activeQuickFilter={filter.quickFilter}
+        />
+      )}
+
+      {/* 3. Sticky Filter & Search Bar */}
+      {viewMode !== 'models' && (
+        <FilterBar
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          brands={brandList}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onResetFilter={handleResetFilter}
+          onOpenModelDirectory={() => setIsModelDirectoryOpen(true)}
+        />
+      )}
+
       {/* 4. Main Catalog Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
-        {/* Results Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-800">
-              {filter.brand !== 'all' ? `แบรนด์ ${filter.brand}` : 'รายการโปรโมชั่นทั้งหมด'}
-            </h3>
-            <span className="text-xs text-slate-500 font-medium tabular-nums">
-              ({filteredPromotions.length} รายการ)
-            </span>
-          </div>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-8 pb-24 md:pb-8">
+        {/* Results Header (for grid/table) */}
+        {viewMode !== 'models' && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                {filter.brand !== 'all' ? `แบรนด์ ${filter.brand}` : 'รายการโปรโมชั่นทั้งหมด'}
+              </h3>
+              <span className="text-xs text-slate-500 font-medium tabular-nums">
+                ({filteredPromotions.length} รายการ)
+              </span>
+            </div>
 
-          <div className="text-xs text-slate-500 hidden sm:flex items-center gap-2">
-            <span>BaNANA 458: กด "+ สั่งซื้อ BNN" เพื่อรวมออเดอร์ หรือกด "สต็อก 458" เพื่อเช็คจำนวนคงเหลือ</span>
+            <div className="text-xs text-slate-500 hidden sm:flex items-center gap-2">
+              <span>BaNANA 458: กด "+ สั่งซื้อ BNN" เพื่อรวมออเดอร์ หรือกด "สต็อก 458" เพื่อเช็คจำนวนคงเหลือ</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Catalog Grid or Table */}
-        {filteredPromotions.length > 0 ? (
+        {/* Catalog Grid or Table or Models */}
+        {viewMode === 'models' ? (
+          <ModelPromotionMenu
+            items={promotions}
+            onSelectProduct={setSelectedProduct}
+            onAddToOrder={handleAddToOrder}
+            onPrintPriceTag={(p) => setPrintItem(p)}
+            onBackToGrid={() => setViewMode('grid')}
+          />
+        ) : filteredPromotions.length > 0 ? (
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               {filteredPromotions.map((item) => (
@@ -502,18 +550,30 @@ export default function App() {
       </main>
 
       {/* Floating Bottom Quick Toolbar for Mobile */}
-      <div className="fixed bottom-4 inset-x-4 z-30 md:hidden flex items-center justify-between gap-2 p-2 bg-slate-950/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-xl">
+      <div className="fixed bottom-3 inset-x-3 z-30 md:hidden flex items-center justify-between gap-1.5 p-1.5 bg-slate-950/95 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl">
+        <button
+          onClick={() => setViewMode(viewMode === 'models' ? 'grid' : 'models')}
+          className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-colors ${
+            viewMode === 'models'
+              ? 'bg-[#FFE500] text-slate-950 shadow-xs'
+              : 'bg-slate-800 text-slate-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5 text-amber-400" />
+          <span>{viewMode === 'models' ? 'ดูการ์ดปกติ' : 'รวมตามรุ่น'}</span>
+        </button>
+
         <button
           onClick={() => setIsScannerOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 text-white rounded-xl text-xs font-semibold"
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 bg-slate-800 text-white rounded-xl text-[11px] font-semibold"
         >
           <Scan className="w-3.5 h-3.5 text-[#FFE500]" />
-          <span>สแกนบาร์โค้ด</span>
+          <span>สแกน</span>
         </button>
 
         <button
           onClick={() => setIsOrderTrayOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-[#FFE500] text-slate-950 rounded-xl text-xs font-bold shadow-xs"
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 bg-amber-400 text-slate-950 rounded-xl text-[11px] font-black shadow-xs"
         >
           <ShoppingCart className="w-3.5 h-3.5" />
           <span>ตะกร้า ({orderItems.reduce((sum, o) => sum + o.quantity, 0)})</span>
@@ -523,7 +583,7 @@ export default function App() {
           href="https://bnn458-stock-order.ai.studio/"
           target="_blank"
           rel="noopener noreferrer"
-          className="p-2 bg-slate-800 text-white rounded-xl"
+          className="p-2 bg-slate-800 text-white rounded-xl shrink-0"
           title="เปิดสต็อก BNN 458"
         >
           <ExternalLink className="w-4 h-4 text-[#FFE500]" />
@@ -575,13 +635,22 @@ export default function App() {
         availableItems={promotions}
       />
 
-      {/* 10. Sheet Synchronization Modal */}
+      {/* 10. Model Directory Modal (ทำเนียบชื่อรุ่น) */}
+      <ModelDirectoryModal
+        isOpen={isModelDirectoryOpen}
+        onClose={() => setIsModelDirectoryOpen(false)}
+        items={promotions}
+        onSelectProduct={(item) => setSelectedProduct(item)}
+      />
+
+      {/* 11. Sheet Synchronization Modal */}
       <SheetSyncModal
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
         config={sheetConfig}
         onSyncFromUrl={handleSyncFromUrl}
         onImportRawCsv={handleImportRawCsv}
+        onImportPromotions={handleImportPromotions}
         onResetToDefault={handleResetToDefault}
         totalLoaded={promotions.length}
       />

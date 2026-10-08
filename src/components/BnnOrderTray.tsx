@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, Copy, Check, ExternalLink, ShoppingCart, FileText, ArrowRight, ShieldCheck, Gift } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Trash2, Plus, Minus, Copy, Check, ExternalLink, ShoppingCart, FileText, ArrowRight, ShieldCheck, Gift, AlertTriangle } from 'lucide-react';
 import { BnnOrderItem, PromotionItem } from '../types/promotion';
+import { checkPromotionExpiry } from '../utils/dateHelper';
 
 interface BnnOrderTrayProps {
   isOpen: boolean;
@@ -42,6 +43,14 @@ export const BnnOrderTray: React.FC<BnnOrderTrayProps> = ({
     return sum + ((item.item.giftValue || 0) * item.quantity);
   }, 0);
   const totalUnits = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Check for promotions expiring soon (within 3 days)
+  const expiringItems = useMemo(() => {
+    return orderItems.filter(order => {
+      const exp = checkPromotionExpiry(order.item.endDate, 3);
+      return exp?.isExpiringSoon;
+    });
+  }, [orderItems]);
 
   const getPaymentLabel = () => {
     if (paymentMethod === 'cash') return 'เงินสด / โอนชำระ';
@@ -97,10 +106,6 @@ ${paymentMethod === 'credit0' ? `💳 ผ่อนเดือนละประ
     setTimeout(() => setCopiedQuote(false), 2500);
   };
 
-  const handleOpenBnn458 = () => {
-    window.open('https://bnn458-stock-order.ai.studio/', '_blank');
-  };
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
       <div
@@ -152,6 +157,28 @@ ${paymentMethod === 'credit0' ? `💳 ผ่อนเดือนละประ
             </div>
           ) : (
             <>
+              {/* Promotion Expiry Warning for Staff */}
+              {expiringItems.length > 0 && (
+                <div className="bg-rose-50 border-2 border-rose-400 rounded-2xl p-3.5 shadow-xs flex items-start gap-3 animate-pulse">
+                  <div className="p-2 rounded-xl bg-rose-600 text-white shrink-0 shadow-xs">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-black text-rose-950 text-sm">
+                        ⚠️ แจ้งเตือนพนักงาน: โปรโมชั่นใกล้หมดอายุ!
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-600 text-white">
+                        {expiringItems.length} รายการ
+                      </span>
+                    </div>
+                    <p className="text-rose-800 leading-relaxed font-medium">
+                      มีสินค้าในตะกร้าที่โปรโมชั่นกำลังจะสิ้นสุดภายใน 3 วัน หรือหมดอายุแล้ว โปรดตรวจสอบวันสิ้นสุดโปรโมชั่นในระบบสต็อก BaNANA 458 ก่อนยืนยันบิล
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Customer & Staff Info Box */}
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -234,12 +261,26 @@ ${paymentMethod === 'credit0' ? `💳 ผ่อนเดือนละประ
                   const p = order.item;
                   const unitPrice = (order.useNoGiftPrice && p.noGiftPrice) ? p.noGiftPrice : p.promoPrice;
                   const itemTotal = unitPrice * order.quantity;
+                  const expiry = checkPromotionExpiry(p.endDate, 3);
 
                   return (
                     <div
                       key={p.id}
-                      className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs hover:border-amber-300 transition-colors space-y-2.5"
+                      className={`bg-white rounded-2xl border p-3.5 shadow-2xs transition-colors space-y-2.5 ${
+                        expiry?.isExpiringSoon ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200 hover:border-amber-300'
+                      }`}
                     >
+                      {/* Expiration Warning Badge */}
+                      {expiry?.isExpiringSoon && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-xs">
+                          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-300" />
+                          <div className="flex items-center justify-between gap-1 flex-1">
+                            <span>{expiry.message}</span>
+                            <span className="text-[11px] font-normal opacity-90">สิ้นสุด {p.endDate}</span>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-1">
@@ -378,14 +419,16 @@ ${paymentMethod === 'credit0' ? `💳 ผ่อนเดือนละประ
                 <span>{copiedQuote ? 'คัดลอกสรุปออเดอร์แล้ว!' : 'คัดลอกใบสรุปออเดอร์ (ส่งลูกค้า / บันทึก)'}</span>
               </button>
 
-              <button
-                onClick={handleOpenBnn458}
+              <a
+                href="https://bnn458-stock-order.ai.studio/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
                 <span>เปิดไปที่สต็อก & สั่งซื้อ BNN 458</span>
                 <span className="text-slate-400 text-[10px] font-mono">bnn458-stock-order</span>
-              </button>
+              </a>
             </div>
           </div>
         )}

@@ -15,6 +15,9 @@ interface HeaderProps {
   orderCount: number;
   onOpenOrderTray: () => void;
   onOpenScanner: () => void;
+  onOpenModelDirectory: () => void;
+  viewMode?: 'grid' | 'table' | 'models';
+  onViewModeChange?: (mode: 'grid' | 'table' | 'models') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,6 +33,9 @@ export const Header: React.FC<HeaderProps> = ({
   orderCount,
   onOpenOrderTray,
   onOpenScanner,
+  onOpenModelDirectory,
+  viewMode,
+  onViewModeChange,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
@@ -93,10 +99,35 @@ export const Header: React.FC<HeaderProps> = ({
             >
               แท็บเล็ต
             </button>
+
+            {onViewModeChange && (
+              <button
+                onClick={() => onViewModeChange(viewMode === 'models' ? 'grid' : 'models')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+                  viewMode === 'models'
+                    ? 'bg-[#FFE500] text-slate-950 shadow-xs font-black border border-amber-300'
+                    : 'text-indigo-700 hover:bg-indigo-50 font-bold'
+                }`}
+                title="เปิดเมนูรวมโปรโมชั่นในแต่ล่ะรุ่น"
+              >
+                <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                <span>รวมโปรตามรุ่น</span>
+              </button>
+            )}
           </nav>
 
           {/* Zone 3: Actions & BNN 458 Link */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Model Directory Button */}
+            <button
+              onClick={onOpenModelDirectory}
+              title="แสดงชื่อรุ่นทั้งหมด พร้อมสเปกและสี"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors shadow-2xs whitespace-nowrap"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <span>แสดงชื่อรุ่น</span>
+            </button>
+
             {/* Barcode Scanner Button */}
             <button
               onClick={onOpenScanner}

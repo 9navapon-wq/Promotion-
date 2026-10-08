@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Copy, Check, Gift, ShieldCheck, Tag, Calendar, Calculator, Share2, Smartphone, Tablet, ShoppingCart, ExternalLink, Printer } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Copy, Check, Gift, ShieldCheck, Tag, Calendar, Calculator, Share2, Smartphone, Tablet, ShoppingCart, ExternalLink, Printer, FileSpreadsheet } from 'lucide-react';
 import { PromotionItem } from '../types/promotion';
+import { defaultPromotions } from '../data/defaultData';
 
 interface ProductDetailModalProps {
   item: PromotionItem | null;
@@ -21,8 +22,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 }) => {
   const [copiedQuote, setCopiedQuote] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedRowTsv, setCopiedRowTsv] = useState(false);
   const [installmentMonths, setInstallmentMonths] = useState<number>(10);
   const [addedToOrderAnim, setAddedToOrderAnim] = useState(false);
+
+  // Guarantee product name is never displayed as a pure barcode number
+  const displayProductName = useMemo(() => {
+    if (!item) return '';
+    const raw = (item.productName || item.modelName || '').trim();
+    if (!raw || /^\d{8,15}$/.test(raw) || raw === item.productCode) {
+      const match = defaultPromotions.find(d => d.productCode === item.productCode || String(d.no) === String(item.no));
+      if (match && match.productName && !/^\d+$/.test(match.productName)) {
+        return match.productName;
+      }
+    }
+    return raw || item.productCode;
+  }, [item]);
 
   if (!item) return null;
 
@@ -59,6 +74,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     navigator.clipboard.writeText(item.productCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopySpreadsheetRow = () => {
+    const tsv = `${item.category}\t${item.brand}\t${item.productCode}\t${item.productName}\t${item.promoDetails}\t${item.regularPrice ? item.regularPrice.toLocaleString() : '-'}\t${item.discount ? item.discount.toLocaleString() : '-'}\t${item.promoPrice ? item.promoPrice.toLocaleString() : '-'}\t${item.noGiftPrice ? item.noGiftPrice.toLocaleString() : ''}\t${item.startDate}\t${item.endDate}`;
+    navigator.clipboard.writeText(tsv);
+    setCopiedRowTsv(true);
+    setTimeout(() => setCopiedRowTsv(false), 2000);
   };
 
   return (
@@ -103,17 +125,36 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Title & Product Code */}
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
-                ชื่อรุ่น (Model)
-              </span>
-              <span className="text-xs text-slate-500 font-mono">
-                #{item.no}
-              </span>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                  ชื่อรุ่น: {displayProductName}
+                </span>
+                <span className="text-xs text-slate-500 font-mono">
+                  #{item.no}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(displayProductName);
+                  setCopiedCode(true);
+                  setTimeout(() => setCopiedCode(false), 2000);
+                }}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>คัดลอกชื่อสินค้า</span>
+              </button>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-              {item.productName}
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+              {displayProductName}
             </h2>
+            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
+              <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">แบรนด์: {item.brand}</span>
+              {item.specs?.color && <span>· สี {item.specs.color}</span>}
+              {item.specs?.ram && item.specs?.rom && <span>· ความจุ {item.specs.ram}+{item.specs.rom}</span>}
+              {item.specs?.is5G && <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">5G</span>}
+            </div>
             <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
               <div className="flex items-center gap-1.5">
                 <span className="font-semibold text-slate-400">รหัสบาร์โค้ด:</span>
@@ -266,6 +307,27 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600">
             <span className="font-semibold text-slate-700 block mb-1">ข้อความโปรโมชั่นฉบับเต็มจากชีต:</span>
             <p className="leading-relaxed">{item.promoDetails}</p>
+          </div>
+
+          {/* Spreadsheet Raw Row Format (Cat. Brand Code Name Details Prices Dates) */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>ข้อมูลแถวสเปรดชีตต้นฉบับ (Spreadsheet Row Format)</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleCopySpreadsheetRow}
+                className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors flex items-center gap-1 shadow-2xs"
+              >
+                {copiedRowTsv ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedRowTsv ? 'คัดลอกแถวข้อมูลแล้ว' : 'คัดลอกแถวนี้ (TSV)'}</span>
+              </button>
+            </div>
+            <div className="p-2.5 bg-white rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 overflow-x-auto whitespace-pre scrollbar-thin">
+              {`${item.category}\t${item.brand}\t${item.productCode}\t${item.productName}\t${item.promoDetails}\t${item.regularPrice ? item.regularPrice.toLocaleString() : '-'}\t${item.discount ? item.discount.toLocaleString() : '-'}\t${item.promoPrice ? item.promoPrice.toLocaleString() : '-'}\t${item.noGiftPrice ? item.noGiftPrice.toLocaleString() : ''}\t${item.startDate}\t${item.endDate}`}
+            </div>
           </div>
 
           {/* BaNANA 458 Integration Hub */}

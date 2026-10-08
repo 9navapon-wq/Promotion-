@@ -1,14 +1,15 @@
 import React from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, LayoutGrid, Table, Check, Gift } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, LayoutGrid, Table, Check, Gift, Layers } from 'lucide-react';
 import { PromotionFilter } from '../types/promotion';
 
 interface FilterBarProps {
   filter: PromotionFilter;
   onFilterChange: (newFilter: Partial<PromotionFilter>) => void;
   brands: { name: string; count: number }[];
-  viewMode: 'grid' | 'table';
-  onViewModeChange: (mode: 'grid' | 'table') => void;
+  viewMode: 'grid' | 'table' | 'models';
+  onViewModeChange: (mode: 'grid' | 'table' | 'models') => void;
   onResetFilter: () => void;
+  onOpenModelDirectory?: () => void;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -17,7 +18,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   brands,
   viewMode,
   onViewModeChange,
-  onResetFilter
+  onResetFilter,
+  onOpenModelDirectory,
 }) => {
   const quickFilterButtons = [
     { id: 'all', label: 'ทั้งหมด' },
@@ -96,6 +98,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               >
                 <Table className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => onViewModeChange('models')}
+                title="เมนูรวมโปรโมชั่นตามรุ่น"
+                className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+                  viewMode === 'models'
+                    ? 'bg-[#FFE500] text-slate-950 shadow-xs font-black'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs font-bold px-1">ตามรุ่น</span>
+              </button>
             </div>
           </div>
         </div>
@@ -142,6 +156,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Row 3: Quick Filter segmented buttons + price filter */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <div className="flex flex-wrap items-center gap-1.5">
+            {onOpenModelDirectory && (
+              <button
+                onClick={onOpenModelDirectory}
+                className="px-2.5 py-1 text-xs rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1 transition-colors shadow-2xs"
+              >
+                <span>📱 แสดงชื่อรุ่น</span>
+              </button>
+            )}
             {quickFilterButtons.map((btn) => (
               <button
                 key={btn.id}

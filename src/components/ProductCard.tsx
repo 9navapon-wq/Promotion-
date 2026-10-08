@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Copy, Check, Gift, ShieldCheck, Tag, Calendar, Layers, Eye, Smartphone, Tablet, ShoppingCart, ExternalLink, Printer } from 'lucide-react';
 import { PromotionItem } from '../types/promotion';
+import { defaultPromotions } from '../data/defaultData';
 
 interface ProductCardProps {
   item: PromotionItem;
@@ -25,6 +26,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [stockCheckOpened, setStockCheckOpened] = useState(false);
   const [addedToOrderAnim, setAddedToOrderAnim] = useState(false);
 
+  // Guarantee product name is never displayed as a pure barcode number
+  const displayProductName = useMemo(() => {
+    const raw = (item.productName || item.modelName || '').trim();
+    if (!raw || /^\d{8,15}$/.test(raw) || raw === item.productCode) {
+      const match = defaultPromotions.find(d => d.productCode === item.productCode || String(d.no) === String(item.no));
+      if (match && match.productName && !/^\d+$/.test(match.productName)) {
+        return match.productName;
+      }
+    }
+    return raw || item.productCode;
+  }, [item.productName, item.modelName, item.productCode, item.no]);
+
   const handleCopyCode = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(item.productCode);
@@ -34,7 +47,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleCopyName = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(item.productName);
+    navigator.clipboard.writeText(displayProductName);
     setCopiedName(true);
     setTimeout(() => setCopiedName(false), 2000);
   };
@@ -137,28 +150,49 @@ ${discountText}${noGiftText}${giftsText}${giftValText}
         {/* Product Model Badge & Name */}
         <div className="mb-2">
           <div className="flex items-center justify-between gap-1.5 mb-1">
-            <span className="inline-block text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">
-              ชื่อรุ่น
+            <span className="inline-block text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md truncate max-w-[200px]" title={displayProductName}>
+              ชื่อรุ่น: {displayProductName}
             </span>
             <button
-              onClick={handleCopyName}
-              title="คัดลอกชื่อรุ่น"
-              className="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(displayProductName);
+                setCopiedName(true);
+                setTimeout(() => setCopiedName(false), 2000);
+              }}
+              title="คัดลอกชื่อรุ่น/สินค้าตามรหัสบาร์โค้ด"
+              className="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors shrink-0"
             >
               {copiedName ? (
                 <span className="text-emerald-600 font-medium flex items-center gap-0.5">
-                  <Check className="w-3 h-3" /> คัดลอกรุ่นแล้ว
+                  <Check className="w-3 h-3" /> คัดลอกแล้ว
                 </span>
               ) : (
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                  <Copy className="w-3 h-3" /> คัดลอกชื่อรุ่น
+                  <Copy className="w-3 h-3" /> คัดลอกรุ่น
                 </span>
               )}
             </button>
           </div>
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug">
-            {item.productName}
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug" title={displayProductName}>
+            {displayProductName}
           </h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1 flex-wrap">
+            <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">
+              {item.brand}
+            </span>
+            {item.specs?.ram && item.specs?.rom && (
+              <span className="font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
+                {item.specs.ram}+{item.specs.rom}
+              </span>
+            )}
+            {item.specs?.color && (
+              <span className="text-slate-600 font-medium">สี {item.specs.color}</span>
+            )}
+            {item.specs?.is5G && (
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1 rounded">5G</span>
+            )}
+          </div>
         </div>
 
         {/* Storage / Specs indicators */}
