@@ -431,7 +431,7 @@ export default function App() {
   const comparedIds = useMemo(() => new Set(comparedProducts.map(p => p.id)), [comparedProducts]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
       {/* 1. Header (Top Bar Contract) */}
       <Header
         sheetConfig={sheetConfig}
@@ -475,7 +475,7 @@ export default function App() {
       )}
 
       {/* 4. Main Catalog Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-8 pb-24 md:pb-8">
+      <main className="flex-1 min-w-0 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-8 pb-24 md:pb-8 overflow-x-hidden">
         {/* Results Header (for grid/table) */}
         {viewMode !== 'models' && (
           <div className="flex items-center justify-between mb-4">
@@ -550,7 +550,7 @@ export default function App() {
       </main>
 
       {/* Floating Bottom Quick Toolbar for Mobile */}
-      <div className="fixed bottom-3 inset-x-3 z-30 md:hidden flex items-center justify-between gap-1.5 p-1.5 bg-slate-950/95 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl">
+      <div className="fixed bottom-3 inset-x-3 max-w-[calc(100vw-24px)] mx-auto z-30 md:hidden flex items-center justify-between gap-1.5 p-1.5 bg-slate-950/95 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl">
         <button
           onClick={() => setViewMode(viewMode === 'models' ? 'grid' : 'models')}
           className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-[11px] font-bold transition-colors ${

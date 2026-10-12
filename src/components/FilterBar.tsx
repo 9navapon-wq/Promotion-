@@ -31,12 +31,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200 sticky top-16 z-20 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 space-y-3">
+    <div className="bg-white border-b border-slate-200 sticky top-14 sm:top-16 z-20 shadow-xs w-full max-w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 space-y-2.5">
         {/* Row 1: Search + View Mode + Sorter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Search box */}
-          <div className="relative flex-1 max-w-lg">
+          <div className="relative flex-1 max-w-lg min-w-0">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -56,7 +56,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           </div>
 
           {/* Right controls: Sort + View Mode */}
-          <div className="flex items-center gap-2 self-end sm:self-center">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
             {/* Sorter */}
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
@@ -115,7 +115,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
 
         {/* Row 2: Brand Horizontal Pill Selector */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth">
+        <div className="flex items-center gap-1.5 touch-scroll-x pb-1 pt-0.5 no-scrollbar scroll-smooth">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1 shrink-0">
             แบรนด์:
           </span>

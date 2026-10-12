@@ -210,7 +210,7 @@ export const ModelPromotionMenu: React.FC<ModelPromotionMenuProps> = ({
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 animate-fadeIn">
+    <div className="space-y-3 sm:space-y-4 animate-fadeIn w-full max-w-full overflow-hidden">
       {/* Compact Top Banner */}
       <div className="bg-linear-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-2xl p-3 sm:p-4 text-slate-950 shadow-xs border border-amber-300">
         <div className="flex items-center justify-between gap-2">
@@ -325,7 +325,7 @@ export const ModelPromotionMenu: React.FC<ModelPromotionMenuProps> = ({
         </div>
 
         {/* Row 2: Brand Pills */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+        <div className="flex items-center gap-1 touch-scroll-x pb-0.5 no-scrollbar text-xs">
           {brands.map(b => (
             <button
               key={b}

@@ -70,7 +70,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs w-full max-w-full">
       {/* Table Sub-header notice */}
       <div className="px-4 py-2.5 bg-amber-50/80 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
         <div className="flex items-center gap-2 text-slate-800 font-medium">
@@ -84,7 +84,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </span>
       </div>
 
-      <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
+      <div className="overflow-x-auto max-h-[750px] overflow-y-auto touch-scroll-x">
         <table className="w-full text-left border-collapse text-xs">
           <thead className="bg-slate-100/90 border-b border-slate-200 sticky top-0 z-10 text-slate-700 font-bold whitespace-nowrap">
             <tr>

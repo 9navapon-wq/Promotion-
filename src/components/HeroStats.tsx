@@ -26,7 +26,7 @@ export const HeroStats: React.FC<HeroStatsProps> = ({
   const countTablets = items.filter(i => i.category.toLowerCase().includes('tablet')).length;
 
   return (
-    <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-white pt-4 pb-5 sm:pt-8 sm:pb-10 px-3 sm:px-6 lg:px-8 shadow-inner">
+    <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-white pt-4 pb-5 sm:pt-8 sm:pb-10 px-3 sm:px-6 lg:px-8 shadow-inner w-full max-w-full overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-6 pb-4 sm:pb-6 border-b border-slate-700/60">
           <div>
